@@ -87,12 +87,16 @@ body {
   to { transform: scale(1.06); }
 }
 
+/* ── Main screen: fixed-width wrapper so everything aligns ── */
+#main-screen {
+  width: 436px;
+}
+
 /* ── Controls ── */
 .controls {
   display: flex;
   gap: 8px;
   margin-top: 8px;
-  width: 436px;
 }
 .ctrl-btn {
   flex: 1;
@@ -110,8 +114,7 @@ body {
 /* ── History ── */
 .history {
   margin-top: 10px;
-  width: 436px;
-  max-height: 120px;
+  height: 120px;
   overflow-y: auto;
 }
 .history h3 { color: #4060C0; font-size: 8px; margin-bottom: 4px; }
@@ -234,9 +237,8 @@ body {
 }
 
 @media (max-width: 460px) {
+  #main-screen { width: 327px; }
   .machine-viewport { width: 327px; height: 480px; }
-  .controls { width: 327px; }
-  .history { width: 327px; }
   .panel { width: 327px; padding: 16px; }
 }
 </style>
