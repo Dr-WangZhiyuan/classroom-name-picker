@@ -8,484 +8,213 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
 body {
-  background: #000010;
+  background: #000;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   font-family: 'Press Start 2P', monospace;
-  overflow: hidden;
   user-select: none;
-}
-
-/* ── Scanline overlay ── */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,0,0,0.08) 2px,
-    rgba(0,0,0,0.08) 4px
-  );
-  pointer-events: none;
-  z-index: 9999;
-}
-
-/* ── HUD (top stats bar) ── */
-.hud {
-  display: flex;
-  gap: 40px;
-  margin-bottom: 20px;
   color: #fff;
-  font-size: 10px;
-  letter-spacing: 1px;
 }
-.hud-item { opacity: 0.8; }
-.hud-value { color: #f0d848; }
+.hidden { display: none !important; }
 
-/* ── Machine wrapper ── */
-.machine-wrapper {
+/* ── Machine viewport: the sprite + overlay ── */
+.machine-viewport {
   position: relative;
-  display: flex;
-  align-items: stretch;
+  width: 436px;   /* 109px * 4 */
+  height: 640px;  /* 160px * 4 */
+  cursor: pointer;
+}
+.machine-img {
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  display: block;
 }
 
-/* ── Slot Machine ── */
-.machine {
-  position: relative;
-  width: 480px;
-  background: linear-gradient(180deg, #2a5090, #1a3868, #1e4070, #1a3868, #2a5090);
-  border: 5px solid #b89818;
-  border-radius: 14px;
-  padding: 0;
-  box-shadow:
-    inset 0 2px 6px rgba(255,255,255,0.15),
-    inset 0 -2px 6px rgba(0,0,0,0.4),
-    0 0 40px rgba(184,152,24,0.2),
-    0 8px 32px rgba(0,0,0,0.7);
-}
-
-/* ── Gold rivets ── */
-.machine::before, .machine::after {
-  content: '';
+/* ── Name overlay: exactly over the white window area ── */
+.name-overlay {
   position: absolute;
-  width: 10px; height: 10px;
-  background: radial-gradient(circle at 35% 35%, #f8e060, #b89818, #8a7010);
-  border-radius: 50%;
-  border: 1px solid #7a6010;
-  z-index: 5;
-}
-.machine::before { top: 8px; left: 8px; }
-.machine::after { top: 8px; right: 8px; }
-
-/* ── Top Banner ── */
-.banner {
-  background: linear-gradient(180deg, #e8c838, #c8a020, #b89818);
-  text-align: center;
-  padding: 12px 20px;
-  border-radius: 8px 8px 0 0;
-  border-bottom: 3px solid #8a7010;
-  position: relative;
-}
-.banner span {
-  font-size: 18px;
-  color: #1a1a40;
-  text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
-  letter-spacing: 3px;
-}
-
-/* ── Machine body interior ── */
-.machine-body {
-  padding: 24px 28px;
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-
-/* ── Display frame (gold border around window) ── */
-.display-frame {
-  flex: 1;
-  border: 4px solid #c8a828;
-  border-radius: 8px;
-  padding: 4px;
-  background: linear-gradient(180deg, #d8b830, #a88818, #d8b830);
-  box-shadow:
-    inset 0 0 8px rgba(0,0,0,0.3),
-    0 0 12px rgba(200,168,40,0.3);
-}
-
-/* ── Display window (where names appear) ── */
-.display-window {
-  background: #000820;
-  border-radius: 4px;
-  height: 72px;
+  left: 13.76%;
+  top: 20.00%;
+  width: 59.63%;
+  height: 20.62%;
   overflow: hidden;
-  position: relative;
-  box-shadow: inset 0 0 20px rgba(0,0,80,0.8);
 }
 
-/* ── Reel strip ── */
 .reel {
   position: absolute;
   width: 100%;
-  top: 0;
-  left: 0;
+  top: 0; left: 0;
   will-change: transform;
 }
 .reel.animating {
   transition: transform 4s cubic-bezier(0.0, 0.45, 0.1, 1.0);
 }
 .reel-item {
-  height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  font-size: 14px;
+  color: #000;
   white-space: nowrap;
-  text-shadow: 0 0 8px rgba(100,180,255,0.6);
-  padding: 0 12px;
-}
-.reel-item.long-name {
-  font-size: 11px;
-}
-.reel-item.very-long-name {
-  font-size: 9px;
+  background: #fff;
+  padding: 0 4px;
 }
 
-/* Glow effect on the display edges */
-.display-window::before, .display-window::after {
-  content: '';
-  position: absolute;
-  left: 0; right: 0;
-  height: 16px;
-  z-index: 2;
-  pointer-events: none;
+/* Winner flash */
+.name-overlay.winner {
+  animation: flash 0.12s step-end 6;
 }
-.display-window::before {
-  top: 0;
-  background: linear-gradient(180deg, #000820, transparent);
+@keyframes flash {
+  50% { background: #F8F080; }
 }
-.display-window::after {
-  bottom: 0;
-  background: linear-gradient(0deg, #000820, transparent);
+.name-overlay.winner .reel-item:last-child {
+  color: #C02020;
+  animation: pulse 0.5s ease-in-out infinite alternate;
 }
-
-/* ── Winner glow ── */
-.display-window.winner {
-  box-shadow:
-    inset 0 0 20px rgba(0,0,80,0.8),
-    inset 0 0 30px rgba(255,200,0,0.3),
-    0 0 20px rgba(255,200,0,0.4);
-}
-.display-window.winner .reel-item:last-child {
-  color: #f0d848;
-  text-shadow: 0 0 12px rgba(255,200,0,0.8), 0 0 24px rgba(255,200,0,0.4);
-  animation: winner-pulse 0.6s ease-in-out infinite alternate;
-}
-@keyframes winner-pulse {
+@keyframes pulse {
   from { transform: scale(1); }
-  to { transform: scale(1.08); }
+  to { transform: scale(1.06); }
 }
 
-/* ── Lever ── */
-.lever {
-  width: 48px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: absolute;
-  right: -44px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  z-index: 10;
-}
-.lever-base {
-  width: 20px;
-  height: 8px;
-  background: linear-gradient(90deg, #666, #aaa, #666);
-  border-radius: 2px;
-}
-.lever-shaft {
-  width: 8px;
-  height: 60px;
-  background: linear-gradient(90deg, #888, #ccc, #999, #ccc, #888);
-  border-radius: 3px;
-  transition: height 0.2s ease;
-}
-.lever-knob {
-  width: 28px;
-  height: 28px;
-  background: radial-gradient(circle at 38% 35%, #ff5555, #cc1111, #880808);
-  border-radius: 50%;
-  border: 2px solid #660808;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.2);
-  transition: transform 0.2s ease;
-}
-.lever.pulled .lever-knob {
-  transform: translateY(36px);
-}
-.lever.pulled .lever-shaft {
-  height: 24px;
-}
-.lever:hover .lever-knob {
-  box-shadow: 0 2px 10px rgba(255,50,50,0.5), inset 0 2px 4px rgba(255,255,255,0.2);
-}
-
-/* ── Bottom section ── */
-.machine-bottom {
-  padding: 16px 28px 8px;
-  text-align: center;
-}
-.coin-tray {
-  background: linear-gradient(180deg, #1a3060, #0e2040);
-  border: 3px solid #b89818;
-  border-radius: 50%;
-  width: 100px;
-  height: 100px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: inset 0 4px 12px rgba(0,0,0,0.6);
-}
-.coin-tray-label {
-  color: #c8a828;
-  font-size: 8px;
-  letter-spacing: 1px;
-  line-height: 1.6;
-  text-align: center;
-}
-
-/* ── Bottom rivets ── */
-.bottom-rivets {
-  display: flex;
-  justify-content: space-between;
-  padding: 0 10px 10px;
-}
-.rivet {
-  width: 10px; height: 10px;
-  background: radial-gradient(circle at 35% 35%, #f8e060, #b89818, #8a7010);
-  border-radius: 50%;
-  border: 1px solid #7a6010;
-}
-
-/* ── Pull button ── */
-.pull-btn {
-  display: block;
-  margin: 16px auto 24px;
-  padding: 14px 48px;
-  font-family: 'Press Start 2P', monospace;
-  font-size: 16px;
-  color: #fff;
-  background: linear-gradient(180deg, #dd2222, #aa1111, #881010);
-  border: 3px solid #660808;
-  border-radius: 8px;
-  cursor: pointer;
-  letter-spacing: 2px;
-  box-shadow:
-    0 4px 0 #550505,
-    0 6px 12px rgba(0,0,0,0.4),
-    inset 0 1px 2px rgba(255,255,255,0.2);
-  transition: all 0.1s ease;
-}
-.pull-btn:hover {
-  background: linear-gradient(180deg, #ee3333, #cc2222, #991515);
-  box-shadow:
-    0 4px 0 #550505,
-    0 6px 16px rgba(255,50,50,0.3),
-    inset 0 1px 2px rgba(255,255,255,0.2);
-}
-.pull-btn:active {
-  transform: translateY(3px);
-  box-shadow:
-    0 1px 0 #550505,
-    0 2px 4px rgba(0,0,0,0.4),
-    inset 0 1px 2px rgba(255,255,255,0.2);
-}
-.pull-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* ── Controls row ── */
+/* ── Controls ── */
 .controls {
   display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 16px;
+  gap: 8px;
+  margin-top: 8px;
 }
 .ctrl-btn {
   font-family: 'Press Start 2P', monospace;
   font-size: 8px;
-  color: #8ab;
-  background: transparent;
-  border: 2px solid #345;
-  border-radius: 4px;
-  padding: 8px 14px;
+  color: #6080C0;
+  background: #000;
+  border: 2px solid #2040A0;
+  padding: 7px 12px;
   cursor: pointer;
-  transition: all 0.15s ease;
-  letter-spacing: 1px;
 }
-.ctrl-btn:hover {
-  color: #bdf;
-  border-color: #68a;
-  background: rgba(40,80,120,0.3);
-}
+.ctrl-btn:hover { color: #88B0F8; border-color: #4060D0; }
 
-/* ── History panel ── */
+/* ── History ── */
 .history {
-  margin-top: 20px;
-  width: 480px;
-  max-height: 160px;
+  margin-top: 10px;
+  width: 436px;
+  max-height: 120px;
   overflow-y: auto;
 }
-.history h3 {
-  color: #68a;
-  font-size: 8px;
-  margin-bottom: 8px;
-  letter-spacing: 2px;
-}
+.history h3 { color: #4060C0; font-size: 8px; margin-bottom: 4px; }
 .history-item {
-  color: #5a7a9a;
+  color: #4060A0;
   font-size: 9px;
-  padding: 4px 0;
-  border-bottom: 1px solid #112;
+  padding: 2px 0;
+  border-bottom: 1px solid #0a0a20;
   display: flex;
   justify-content: space-between;
 }
-.history-item:first-child {
-  color: #f0d848;
-}
+.history-item:first-child { color: #F8D830; }
 .history-num { opacity: 0.5; }
+
+.all-picked {
+  color: #F8D830;
+  font-size: 10px;
+  text-align: center;
+  margin-top: 8px;
+  animation: blink 0.5s step-end infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
 
 /* ── Overlays ── */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,16,0.92);
+  background: rgba(0,0,0,0.94);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
 }
-.overlay.hidden { display: none; }
-
 .panel {
-  background: linear-gradient(180deg, #1a2a48, #0e1a30);
-  border: 3px solid #b89818;
-  border-radius: 12px;
-  padding: 32px;
-  width: 460px;
+  background: #080818;
+  border: 4px solid #0040FF;
+  padding: 24px;
+  width: 420px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 0 60px rgba(184,152,24,0.15);
 }
 .panel h2 {
-  color: #f0d848;
+  color: #F8D830;
   font-size: 14px;
   text-align: center;
   margin-bottom: 8px;
-  letter-spacing: 2px;
 }
 .panel p {
-  color: #8ab;
+  color: #6080C0;
   font-size: 8px;
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   line-height: 1.8;
 }
 .panel textarea {
   width: 100%;
-  height: 220px;
-  background: #000820;
-  color: #ddeeff;
-  border: 2px solid #345;
-  border-radius: 6px;
-  padding: 12px;
+  height: 200px;
+  background: #000;
+  color: #fff;
+  border: 3px solid #0040FF;
+  padding: 10px;
   font-family: 'Press Start 2P', monospace;
   font-size: 9px;
   line-height: 2;
   resize: vertical;
   outline: none;
 }
-.panel textarea:focus {
-  border-color: #68a;
-  box-shadow: 0 0 12px rgba(80,160,255,0.15);
-}
-.panel textarea::placeholder {
-  color: #345;
-}
+.panel textarea:focus { border-color: #4080FF; }
+.panel textarea::placeholder { color: #202040; }
 .panel-btn {
   display: block;
   width: 100%;
-  margin-top: 16px;
-  padding: 14px;
+  margin-top: 12px;
+  padding: 12px;
   font-family: 'Press Start 2P', monospace;
   font-size: 11px;
-  color: #1a1a40;
-  background: linear-gradient(180deg, #e8c838, #c8a020);
-  border: 2px solid #8a7010;
-  border-radius: 6px;
+  color: #fff;
+  background: #0040FF;
+  border: 4px solid #000;
+  border-top-color: #4080FF;
+  border-left-color: #4080FF;
+  border-bottom-color: #0020A0;
+  border-right-color: #0020A0;
   cursor: pointer;
-  letter-spacing: 2px;
-  transition: all 0.15s ease;
 }
-.panel-btn:hover {
-  background: linear-gradient(180deg, #f0d848, #d8b830);
+.panel-btn:active {
+  border-top-color: #0020A0;
+  border-left-color: #0020A0;
+  border-bottom-color: #4080FF;
+  border-right-color: #4080FF;
 }
-.panel-row {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-}
+.panel-row { display: flex; gap: 8px; margin-top: 8px; }
 .panel-row .panel-btn { margin-top: 0; }
-.panel-btn.secondary {
-  background: linear-gradient(180deg, #2a4a7a, #1a3060);
-  color: #8ab;
-  border-color: #345;
-}
-.panel-btn.secondary:hover {
-  background: linear-gradient(180deg, #3a5a8a, #2a4070);
-  color: #bdf;
-}
-.panel-btn.danger {
-  background: linear-gradient(180deg, #6a2020, #4a1515);
-  color: #e88;
-  border-color: #4a1515;
-}
-.panel-btn.danger:hover {
-  background: linear-gradient(180deg, #7a2a2a, #5a2020);
-}
-
+.panel-btn.secondary { background: #181830; }
+.panel-btn.danger { background: #401010; color: #F08080; }
 .panel label {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #8ab;
+  color: #6080C0;
   font-size: 8px;
-  margin-top: 14px;
+  margin-top: 12px;
   cursor: pointer;
 }
 .panel input[type="checkbox"] {
-  accent-color: #c8a828;
+  accent-color: #0040FF;
   width: 16px;
   height: 16px;
 }
 
-/* ── Confetti ── */
 .confetti-piece {
   position: fixed;
-  width: 8px;
-  height: 8px;
   z-index: 200;
   pointer-events: none;
   animation: confetti-fall linear forwards;
@@ -495,41 +224,16 @@ body::after {
   100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
 }
 
-/* ── No-names message ── */
-.empty-msg {
-  color: #5a7a9a;
-  font-size: 10px;
-  text-align: center;
-  padding: 24px 0;
-  line-height: 2;
-}
-
-/* ── All picked flash ── */
-.all-picked {
-  color: #f0d848;
-  font-size: 10px;
-  text-align: center;
-  margin-top: 12px;
-  animation: blink 1s step-end infinite;
-}
-@keyframes blink {
-  50% { opacity: 0; }
-}
-
-/* ── Responsive ── */
-@media (max-width: 580px) {
-  .machine { width: 340px; }
-  .history { width: 340px; }
-  .reel-item { font-size: 11px; }
-  .banner span { font-size: 13px; }
-  .panel { width: 340px; padding: 20px; }
-  .lever { right: -36px; }
+@media (max-width: 460px) {
+  .machine-viewport { width: 327px; height: 480px; }
+  .history { width: 327px; }
+  .panel { width: 327px; padding: 16px; }
 }
 </style>
 </head>
 <body>
 
-<!-- ── SETUP OVERLAY ── -->
+<!-- SETUP OVERLAY -->
 <div class="overlay" id="setup-overlay">
   <div class="panel">
     <h2>NAME PICKER</h2>
@@ -539,16 +243,13 @@ body::after {
   </div>
 </div>
 
-<!-- ── SETTINGS OVERLAY ── -->
+<!-- SETTINGS OVERLAY -->
 <div class="overlay hidden" id="settings-overlay">
   <div class="panel">
     <h2>SETTINGS</h2>
     <p>EDIT NAMES (ONE PER LINE)</p>
     <textarea id="settings-names"></textarea>
-    <label>
-      <input type="checkbox" id="no-repeat-check">
-      NO-REPEAT MODE (skip picked names)
-    </label>
+    <label><input type="checkbox" id="no-repeat-check"> NO-REPEAT MODE</label>
     <button class="panel-btn" id="settings-save">SAVE</button>
     <div class="panel-row">
       <button class="panel-btn secondary" id="settings-close">CANCEL</button>
@@ -557,433 +258,220 @@ body::after {
   </div>
 </div>
 
-<!-- ── MAIN SCREEN ── -->
+<!-- MAIN SCREEN -->
 <div id="main-screen" style="display:none;">
-
-  <!-- HUD -->
-  <div class="hud">
-    <div class="hud-item">PICKED: <span class="hud-value" id="hud-picked">0</span></div>
-    <div class="hud-item">REMAINING: <span class="hud-value" id="hud-remaining">0</span></div>
-  </div>
-
-  <!-- Machine + Lever -->
-  <div class="machine-wrapper">
-    <div class="machine">
-      <!-- Banner -->
-      <div class="banner"><span>WHO'S NEXT?</span></div>
-
-      <!-- Body -->
-      <div class="machine-body">
-        <div class="display-frame">
-          <div class="display-window" id="display-window">
-            <div class="reel" id="reel">
-              <div class="reel-item">READY</div>
-            </div>
-          </div>
-        </div>
+  <div class="machine-viewport" id="machine-click">
+    <img src="machine.png" class="machine-img" alt="Slot Machine" draggable="false">
+    <div class="name-overlay" id="display-window">
+      <div class="reel" id="reel">
+        <div class="reel-item">READY</div>
       </div>
-
-      <!-- Bottom decorative -->
-      <div class="machine-bottom">
-        <div class="coin-tray">
-          <div class="coin-tray-label">NAME<br>PICKER</div>
-        </div>
-      </div>
-
-      <!-- Bottom rivets -->
-      <div class="bottom-rivets">
-        <div class="rivet"></div>
-        <div class="rivet"></div>
-      </div>
-
-      <!-- Pull button -->
-      <button class="pull-btn" id="pull-btn">PULL!</button>
-    </div>
-
-    <!-- Lever -->
-    <div class="lever" id="lever" title="Pull the lever!">
-      <div class="lever-knob"></div>
-      <div class="lever-shaft"></div>
-      <div class="lever-base"></div>
     </div>
   </div>
 
-  <!-- Controls -->
   <div class="controls">
     <button class="ctrl-btn" id="btn-settings">SETTINGS</button>
     <button class="ctrl-btn" id="btn-clear-history">CLEAR HISTORY</button>
     <button class="ctrl-btn" id="btn-sound">SOUND: ON</button>
   </div>
 
-  <!-- History -->
   <div class="history" id="history-panel"></div>
-
-  <!-- All-picked message -->
-  <div class="all-picked hidden" id="all-picked-msg">ALL NAMES PICKED! RESET TO CONTINUE.</div>
+  <div class="all-picked hidden" id="all-picked-msg">ALL NAMES PICKED!</div>
 </div>
 
 <script>
-const ITEM_HEIGHT = 72;
+let ITEM_HEIGHT;
 const SPIN_DURATION = 4000;
 const SPIN_CYCLES = 4;
 
-let names = [];
-let pickedNames = [];
-let noRepeat = false;
-let soundOn = true;
-let spinning = false;
-let audioCtx = null;
+let names = [], pickedNames = [];
+let noRepeat = false, soundOn = true, spinning = false, audioCtx = null;
 
-// ── LocalStorage helpers ──
 function saveNames() { localStorage.setItem('np_names', JSON.stringify(names)); }
-function loadNames() {
-  try { return JSON.parse(localStorage.getItem('np_names')) || []; }
-  catch { return []; }
-}
+function loadNames() { try { return JSON.parse(localStorage.getItem('np_names')) || []; } catch { return []; } }
 function savePicked() { localStorage.setItem('np_picked', JSON.stringify(pickedNames)); }
-function loadPicked() {
-  try { return JSON.parse(localStorage.getItem('np_picked')) || []; }
-  catch { return []; }
-}
+function loadPicked() { try { return JSON.parse(localStorage.getItem('np_picked')) || []; } catch { return []; } }
 function savePrefs() { localStorage.setItem('np_prefs', JSON.stringify({ noRepeat, soundOn })); }
-function loadPrefs() {
-  try { return JSON.parse(localStorage.getItem('np_prefs')) || {}; }
-  catch { return {}; }
+function loadPrefs() { try { return JSON.parse(localStorage.getItem('np_prefs')) || {}; } catch { return {}; } }
+
+function toTitleCase(s) { return s.toLowerCase().trim().replace(/(?:^|\s)\S/g, c => c.toUpperCase()); }
+function parseNames(t) { return t.split('\n').map(l => l.trim()).filter(l => l).map(toTitleCase); }
+function availableNames() { return noRepeat ? names.filter(n => !pickedNames.includes(n)) : [...names]; }
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+function nameFontSize(name) {
+  const overlayWidth = document.getElementById('display-window').offsetWidth;
+  const maxFit = Math.floor((overlayWidth - 8) / (name.length * 0.62));
+  return Math.max(8, Math.min(20, maxFit));
 }
 
-// ── Title Case conversion ──
-function toTitleCase(str) {
-  const lower = str.toLowerCase().trim();
-  return lower.replace(/(?:^|\s)\S/g, c => c.toUpperCase());
-}
-
-// ── Name size class ──
-function nameSizeClass(name) {
-  if (name.length > 28) return 'very-long-name';
-  if (name.length > 20) return 'long-name';
-  return '';
-}
-
-// ── Parse name input ──
-function parseNames(text) {
-  return text.split('\n')
-    .map(l => l.trim())
-    .filter(l => l.length > 0)
-    .map(toTitleCase);
-}
-
-// ── Available names (respecting no-repeat) ──
-function availableNames() {
-  if (!noRepeat) return [...names];
-  return names.filter(n => !pickedNames.includes(n));
-}
-
-// ── Shuffle array ──
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-// ── Update HUD ──
 function updateHUD() {
-  const avail = availableNames();
-  document.getElementById('hud-picked').textContent = pickedNames.length;
-  document.getElementById('hud-remaining').textContent = avail.length;
-
-  const allPickedMsg = document.getElementById('all-picked-msg');
-  if (noRepeat && avail.length === 0 && names.length > 0) {
-    allPickedMsg.classList.remove('hidden');
-  } else {
-    allPickedMsg.classList.add('hidden');
-  }
+  const a = availableNames();
+  document.getElementById('all-picked-msg').classList.toggle('hidden', !(noRepeat && !a.length && names.length));
 }
 
-// ── Update History ──
 function updateHistory() {
-  const panel = document.getElementById('history-panel');
-  if (pickedNames.length === 0) {
-    panel.innerHTML = '';
-    return;
-  }
-  let html = '<h3>HISTORY</h3>';
-  const reversed = [...pickedNames].reverse();
-  reversed.forEach((name, i) => {
-    html += `<div class="history-item"><span>${name}</span><span class="history-num">#${pickedNames.length - i}</span></div>`;
-  });
-  panel.innerHTML = html;
+  const p = document.getElementById('history-panel');
+  if (!pickedNames.length) { p.innerHTML = ''; return; }
+  p.innerHTML = '<h3>HISTORY</h3>' + [...pickedNames].reverse().map((n, i) =>
+    `<div class="history-item"><span>${n}</span><span class="history-num">#${pickedNames.length - i}</span></div>`
+  ).join('');
 }
 
-// ── Audio ──
-function initAudio() {
-  if (audioCtx) return;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-}
-
+function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
 function playTick() {
   if (!soundOn || !audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'square';
-  osc.frequency.value = 800 + Math.random() * 400;
-  gain.gain.value = 0.06;
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.03);
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = 'square'; o.frequency.value = 800 + Math.random() * 400;
+  g.gain.value = 0.06; g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+  o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.03);
 }
-
 function playWin() {
   if (!soundOn || !audioCtx) return;
-  const notes = [523, 659, 784, 1047];
-  notes.forEach((freq, i) => {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'square';
-    osc.frequency.value = freq;
-    gain.gain.value = 0;
-    gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.12);
-    gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + i * 0.12 + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.12 + 0.25);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start(audioCtx.currentTime + i * 0.12);
-    osc.stop(audioCtx.currentTime + i * 0.12 + 0.25);
+  [523, 659, 784, 1047].forEach((f, i) => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = 'square'; o.frequency.value = f; g.gain.value = 0;
+    g.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.12);
+    g.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + i * 0.12 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.12 + 0.25);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(audioCtx.currentTime + i * 0.12); o.stop(audioCtx.currentTime + i * 0.12 + 0.25);
   });
 }
-
 function playLever() {
   if (!soundOn || !audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.value = 150;
-  osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.1);
-  gain.gain.value = 0.08;
-  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.15);
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = 'sawtooth'; o.frequency.value = 150;
+  o.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.1);
+  g.gain.value = 0.08; g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+  o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + 0.15);
 }
 
-// ── Confetti ──
 function spawnConfetti() {
-  const colors = ['#f0d848', '#ff4444', '#44aaff', '#44ff88', '#ff88ff', '#ff8844'];
+  const c = ['#F8D830','#F84848','#4888F8','#48F888','#F888F8','#F88848'];
   for (let i = 0; i < 40; i++) {
-    const el = document.createElement('div');
-    el.className = 'confetti-piece';
-    el.style.left = Math.random() * 100 + 'vw';
-    el.style.top = '-10px';
-    el.style.background = colors[Math.floor(Math.random() * colors.length)];
-    el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
-    el.style.animationDelay = (Math.random() * 0.5) + 's';
-    el.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
-    el.style.width = (5 + Math.random() * 6) + 'px';
-    el.style.height = (5 + Math.random() * 6) + 'px';
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 4000);
+    const e = document.createElement('div'); e.className = 'confetti-piece';
+    Object.assign(e.style, {
+      left: Math.random()*100+'vw', top: '-10px',
+      background: c[Math.random()*c.length|0],
+      width: (5+Math.random()*6)+'px', height: (5+Math.random()*6)+'px',
+      borderRadius: Math.random()>.5?'50%':'0',
+      animationDuration: (1.5+Math.random()*2)+'s',
+      animationDelay: (Math.random()*.5)+'s'
+    });
+    document.body.appendChild(e); setTimeout(() => e.remove(), 4000);
   }
 }
 
-// ── Build reel and spin ──
 function spin() {
   const avail = availableNames();
-  if (avail.length === 0 || spinning) return;
+  if (!avail.length || spinning) return;
+  spinning = true; initAudio(); playLever();
 
-  spinning = true;
-  initAudio();
-  playLever();
+  ITEM_HEIGHT = document.getElementById('display-window').offsetHeight;
 
-  const pullBtn = document.getElementById('pull-btn');
-  pullBtn.disabled = true;
+  const dw = document.getElementById('display-window');
+  dw.classList.remove('winner');
 
-  const lever = document.getElementById('lever');
-  lever.classList.add('pulled');
-  setTimeout(() => lever.classList.remove('pulled'), 300);
-
-  const displayWindow = document.getElementById('display-window');
-  displayWindow.classList.remove('winner');
-
-  const targetName = avail[Math.floor(Math.random() * avail.length)];
-
+  const target = avail[Math.random() * avail.length | 0];
   const reel = document.getElementById('reel');
   reel.classList.remove('animating');
   reel.style.transform = 'translateY(0)';
   reel.innerHTML = '';
 
-  const reelNames = [];
-  for (let c = 0; c < SPIN_CYCLES; c++) {
-    reelNames.push(...shuffle([...names]));
-  }
-  reelNames.push(targetName);
+  const items = [];
+  for (let c = 0; c < SPIN_CYCLES; c++) items.push(...shuffle([...names]));
+  items.push(target);
 
-  reelNames.forEach(name => {
-    const div = document.createElement('div');
-    div.className = 'reel-item ' + nameSizeClass(name);
-    div.textContent = name;
-    reel.appendChild(div);
+  items.forEach(n => {
+    const d = document.createElement('div');
+    d.className = 'reel-item';
+    d.textContent = n;
+    d.style.height = ITEM_HEIGHT + 'px';
+    d.style.fontSize = nameFontSize(n) + 'px';
+    reel.appendChild(d);
   });
 
-  const targetY = -((reelNames.length - 1) * ITEM_HEIGHT);
-
-  // Tick sounds during animation
-  let tickCount = 0;
-  const totalTicks = reelNames.length;
-  function scheduleTicks() {
-    let elapsed = 0;
-    for (let i = 0; i < totalTicks - 1; i++) {
-      const progress = i / (totalTicks - 1);
-      const t = solveCubicBezier(progress);
-      const tickTime = t * SPIN_DURATION;
-      if (tickTime > elapsed + 30) {
-        setTimeout(playTick, tickTime);
-        elapsed = tickTime;
-      }
-    }
+  let elapsed = 0;
+  for (let i = 0; i < items.length - 1; i++) {
+    const p = i / (items.length - 1), t = p * p * (3 - 2 * p) * SPIN_DURATION;
+    if (t > elapsed + 30) { setTimeout(playTick, t); elapsed = t; }
   }
-  function solveCubicBezier(y) {
-    return y * y * (3 - 2 * y);
-  }
-  scheduleTicks();
 
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      reel.classList.add('animating');
-      reel.style.transform = `translateY(${targetY}px)`;
-    });
-  });
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    reel.classList.add('animating');
+    reel.style.transform = `translateY(${-((items.length - 1) * ITEM_HEIGHT)}px)`;
+  }));
 
   setTimeout(() => {
     spinning = false;
-    pullBtn.disabled = false;
-    displayWindow.classList.add('winner');
-    playWin();
-    spawnConfetti();
-
-    pickedNames.push(targetName);
-    savePicked();
-    updateHUD();
-    updateHistory();
+    dw.classList.add('winner');
+    playWin(); spawnConfetti();
+    pickedNames.push(target); savePicked(); updateHUD(); updateHistory();
   }, SPIN_DURATION + 100);
 }
 
-// ── Show / hide overlays ──
-function showOverlay(id) { document.getElementById(id).classList.remove('hidden'); }
-function hideOverlay(id) { document.getElementById(id).classList.add('hidden'); }
-
-// ── Init ──
 function init() {
-  const prefs = loadPrefs();
-  noRepeat = prefs.noRepeat || false;
-  soundOn = prefs.soundOn !== false;
-  names = loadNames();
-  pickedNames = loadPicked();
-
+  const p = loadPrefs(); noRepeat = p.noRepeat || false; soundOn = p.soundOn !== false;
+  names = loadNames(); pickedNames = loadPicked();
   document.getElementById('no-repeat-check').checked = noRepeat;
   document.getElementById('btn-sound').textContent = soundOn ? 'SOUND: ON' : 'SOUND: OFF';
-
-  if (names.length === 0) {
+  if (!names.length) {
     document.getElementById('setup-overlay').classList.remove('hidden');
     document.getElementById('main-screen').style.display = 'none';
   } else {
     document.getElementById('setup-overlay').classList.add('hidden');
     document.getElementById('main-screen').style.display = '';
-    updateHUD();
-    updateHistory();
+    updateHUD(); updateHistory();
   }
 }
 
-// ── Setup save ──
 document.getElementById('setup-save').addEventListener('click', () => {
-  const text = document.getElementById('setup-names').value;
-  const parsed = parseNames(text);
-  if (parsed.length === 0) return;
-  names = parsed;
-  pickedNames = [];
-  saveNames();
-  savePicked();
-  hideOverlay('setup-overlay');
+  const n = parseNames(document.getElementById('setup-names').value);
+  if (!n.length) return;
+  names = n; pickedNames = []; saveNames(); savePicked();
+  document.getElementById('setup-overlay').classList.add('hidden');
   document.getElementById('main-screen').style.display = '';
-  updateHUD();
-  updateHistory();
+  updateHUD(); updateHistory();
 });
-
-// ── Settings ──
 document.getElementById('btn-settings').addEventListener('click', () => {
   document.getElementById('settings-names').value = names.join('\n');
   document.getElementById('no-repeat-check').checked = noRepeat;
-  showOverlay('settings-overlay');
+  document.getElementById('settings-overlay').classList.remove('hidden');
 });
-
 document.getElementById('settings-save').addEventListener('click', () => {
-  const text = document.getElementById('settings-names').value;
-  const parsed = parseNames(text);
-  if (parsed.length === 0) return;
-  names = parsed;
-  noRepeat = document.getElementById('no-repeat-check').checked;
-  saveNames();
-  savePrefs();
-  pickedNames = pickedNames.filter(n => names.includes(n));
-  savePicked();
-  hideOverlay('settings-overlay');
-  updateHUD();
-  updateHistory();
+  const n = parseNames(document.getElementById('settings-names').value);
+  if (!n.length) return;
+  names = n; noRepeat = document.getElementById('no-repeat-check').checked;
+  saveNames(); savePrefs();
+  pickedNames = pickedNames.filter(x => names.includes(x)); savePicked();
+  document.getElementById('settings-overlay').classList.add('hidden');
+  updateHUD(); updateHistory();
 });
-
 document.getElementById('settings-close').addEventListener('click', () => {
-  hideOverlay('settings-overlay');
+  document.getElementById('settings-overlay').classList.add('hidden');
 });
-
 document.getElementById('settings-reset').addEventListener('click', () => {
-  if (!confirm('Delete all names and reset? This cannot be undone.')) return;
-  names = [];
-  pickedNames = [];
-  localStorage.removeItem('np_names');
-  localStorage.removeItem('np_picked');
-  localStorage.removeItem('np_prefs');
-  hideOverlay('settings-overlay');
+  if (!confirm('Delete all names and reset?')) return;
+  names = []; pickedNames = [];
+  localStorage.removeItem('np_names'); localStorage.removeItem('np_picked'); localStorage.removeItem('np_prefs');
+  document.getElementById('settings-overlay').classList.add('hidden');
   document.getElementById('main-screen').style.display = 'none';
   document.getElementById('setup-overlay').classList.remove('hidden');
   document.getElementById('setup-names').value = '';
 });
-
-// ── Clear history ──
 document.getElementById('btn-clear-history').addEventListener('click', () => {
-  pickedNames = [];
-  savePicked();
-  updateHUD();
-  updateHistory();
+  pickedNames = []; savePicked(); updateHUD(); updateHistory();
 });
-
-// ── Sound toggle ──
 document.getElementById('btn-sound').addEventListener('click', () => {
   soundOn = !soundOn;
   document.getElementById('btn-sound').textContent = soundOn ? 'SOUND: ON' : 'SOUND: OFF';
   savePrefs();
 });
-
-// ── Pull button ──
-document.getElementById('pull-btn').addEventListener('click', () => {
-  initAudio();
-  spin();
-});
-
-// ── Lever click ──
-document.getElementById('lever').addEventListener('click', () => {
-  initAudio();
-  spin();
-});
-
-// ── Spacebar to pull ──
-document.addEventListener('keydown', (e) => {
+document.getElementById('machine-click').addEventListener('click', () => { initAudio(); spin(); });
+document.addEventListener('keydown', e => {
   if (e.code === 'Space' && !spinning && document.getElementById('main-screen').style.display !== 'none') {
-    e.preventDefault();
-    initAudio();
-    spin();
+    e.preventDefault(); initAudio(); spin();
   }
 });
 
