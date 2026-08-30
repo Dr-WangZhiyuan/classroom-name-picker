@@ -120,8 +120,14 @@ body {
   margin-top: 10px;
   height: 120px;
   overflow-y: auto;
+  width: 376px;
+  margin-left: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.history h3 { color: #4060C0; font-size: 8px; margin-bottom: 4px; }
+.history::-webkit-scrollbar { display: none; }
+.history h3 { color: #4060C0; font-size: 8px; margin-bottom: 4px; cursor: pointer; }
+.history h3:hover { color: #6080F0; }
 .history-item {
   color: #4060A0;
   font-size: 9px;
@@ -273,6 +279,7 @@ body {
   #main-screen { width: 327px; }
   .machine-viewport { width: 327px; height: 480px; }
   .controls { width: 282px; margin-left: 3px; }
+  .history { width: 282px; margin-left: 3px; }
   .lever-cover { left: 291px; top: 78px; width: 30px; height: 165px; }
   .lever-ball {
     left: 291px; top: 78px; width: 30px; height: 165px;
@@ -363,6 +370,19 @@ function updateHistory() {
   p.innerHTML = '<h3>HISTORY</h3>' + [...pickedNames].reverse().map((n, i) =>
     `<div class="history-item"><span>${n}</span><span class="history-num">#${pickedNames.length - i}</span></div>`
   ).join('');
+  p.querySelector('h3').addEventListener('click', exportHistory);
+}
+
+function exportHistory() {
+  if (!pickedNames.length) return;
+  const lines = pickedNames.map((n, i) => `#${i + 1}\t${n}`);
+  const text = 'Pick History\n' + new Date().toLocaleString() + '\n\n' + lines.join('\n') + '\n';
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pick-history.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
