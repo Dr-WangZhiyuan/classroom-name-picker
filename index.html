@@ -14,7 +14,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-top: 2vh;
   font-family: 'Press Start 2P', monospace;
   user-select: none;
   color: #fff;
@@ -98,7 +99,8 @@ body {
 .controls {
   display: flex;
   gap: 8px;
-  margin-top: 8px;
+  width: 376px;
+  margin: 8px 0 0 4px;
 }
 .ctrl-btn {
   flex: 1;
@@ -227,6 +229,34 @@ body {
   height: 16px;
 }
 
+/* ── Lever pull animation ── */
+.lever-cover {
+  position: absolute;
+  left: 388px; top: 104px;
+  width: 40px; height: 40px;
+  background: #000;
+  pointer-events: none;
+  opacity: 0;
+}
+.lever-cover.active { opacity: 1; }
+.lever-ball {
+  position: absolute;
+  left: 388px; top: 104px;
+  width: 40px; height: 40px;
+  background: url(machine.png) -388px -104px / 436px 640px no-repeat;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  pointer-events: none;
+}
+@keyframes lever-pull {
+  0% { transform: translateY(0); }
+  35% { transform: translateY(80px); }
+  100% { transform: translateY(0); }
+}
+.lever-ball.pulling {
+  animation: lever-pull 0.5s ease-in-out;
+}
+
 .confetti-piece {
   position: fixed;
   z-index: 200;
@@ -241,6 +271,12 @@ body {
 @media (max-width: 460px) {
   #main-screen { width: 327px; }
   .machine-viewport { width: 327px; height: 480px; }
+  .controls { width: 282px; margin-left: 3px; }
+  .lever-cover { left: 291px; top: 78px; width: 30px; height: 30px; }
+  .lever-ball {
+    left: 291px; top: 78px; width: 30px; height: 30px;
+    background-size: 327px 480px; background-position: -291px -78px;
+  }
   .panel { width: 327px; padding: 16px; }
 }
 </style>
@@ -281,6 +317,8 @@ body {
         <div class="reel-item">READY</div>
       </div>
     </div>
+    <div class="lever-cover" id="lever-cover"></div>
+    <div class="lever-ball" id="lever-ball"></div>
   </div>
 
   <div class="controls">
@@ -376,6 +414,15 @@ function spin() {
   if (!avail.length || spinning) return;
   spinning = true; initAudio(); playLever();
 
+  const leverCover = document.getElementById('lever-cover');
+  const leverBall = document.getElementById('lever-ball');
+  leverCover.classList.add('active');
+  leverBall.classList.add('pulling');
+  leverBall.addEventListener('animationend', () => {
+    leverBall.classList.remove('pulling');
+    leverCover.classList.remove('active');
+  }, { once: true });
+
   ITEM_HEIGHT = document.getElementById('display-window').offsetHeight;
 
   const dw = document.getElementById('display-window');
@@ -449,7 +496,8 @@ document.getElementById('btn-settings').addEventListener('click', () => {
 document.getElementById('settings-save').addEventListener('click', () => {
   const n = parseNames(document.getElementById('settings-names').value);
   if (!n.length) return;
-  names = n; noRepeat = document.getElementById('no-repeat-check').checked;
+  names = n;
+  noRepeat = document.getElementById('no-repeat-check').checked;
   saveNames(); savePrefs();
   pickedNames = pickedNames.filter(x => names.includes(x)); savePicked();
   document.getElementById('settings-overlay').classList.add('hidden');
