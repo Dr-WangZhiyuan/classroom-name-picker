@@ -247,11 +247,12 @@ body {
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   pointer-events: none;
+  transform-origin: 50% 100%;
 }
 @keyframes lever-pull {
-  0% { transform: translateY(0); }
-  35% { transform: translateY(80px); }
-  100% { transform: translateY(0); }
+  0% { transform: perspective(400px) rotateX(0deg); }
+  30% { transform: perspective(400px) rotateX(40deg); }
+  100% { transform: perspective(400px) rotateX(0deg); }
 }
 .lever-ball.pulling {
   animation: lever-pull 0.5s ease-in-out;
